@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcador de Edades</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F8F73">
+<meta name="description" content="Registra niños y los ubica automáticamente por grupo de edad.">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Edades">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal-deep:#166B54;
+    --teal:#1F8F73;
+    --teal-light:#4FBE9B;
+    --navy:#26324A;
+    --muted:#66707F;
+    --paper:#FAFAF7;
+    --panel:#FFFFFF;
+    --line:#E7E5DC;
+    --yellow:#F5AC2B;
+
+    --bebe:#F0653D;
+    --preescolar:#F5AC2B;
+    --escolar:#3D6FE0;
+    --preadolescente:#1F8F73;
+    --adolescente:#8B5FBF;
+    --adulto:#66707F;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--navy);
+    font-family:'Nunito', sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Baloo 2', sans-serif;
+    margin:0;
+    line-height:1.15;
+    color:var(--navy);
+  }
+  button{ font-family:inherit; }
+  img,svg{ display:block; }
+
+  :focus-visible{
+    outline:3px solid var(--teal-deep);
+    outline-offset:2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  a.skip-link{
+    position:absolute; left:-999px; top:0;
+    background:var(--navy); color:#fff; padding:0.6rem 1rem; border-radius:0 0 8px 0; z-index:100;
+  }
+  a.skip-link:focus{ left:0; }
+
+  /* ---------- Nav ---------- */
+  .nav{
+    position:relative; z-index:2;
+    max-width:1100px;
+    margin:0 auto;
+    padding:1.4rem 1.5rem 0;
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+  }
+  .nav .mark{ flex:0 0 auto; }
+  .nav .wordmark{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:1.15rem;
+    color:#fff;
+    letter-spacing:0.2px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(160deg, var(--teal) 0%, var(--teal-deep) 100%);
+    padding-bottom:3rem;
+  }
+  .hero-blob{
+    position:absolute;
+    inset:0;
+    width:100%; height:100%;
+    z-index:0;
+  }
+  .hero-inner{
+    position:relative; z-index:1;
+    max-width:1100px;
+    margin:0 auto;
+    padding:2.5rem 1.5rem 0;
+    display:flex;
+    align-items:center;
+    gap:2rem;
+    flex-wrap:wrap;
+  }
+  .hero-text{ flex:1 1 320px; min-width:260px; }
+  .hero-text h1{
+    font-size:clamp(2rem, 4.4vw, 2.9rem);
+    font-weight:700;
+    color:#fff;
+  }
+  .hero-text p{
+    margin:0.85rem 0 0;
+    max-width:44ch;
+    color:rgba(255,255,255,0.86);
+    font-size:1.05rem;
+  }
+  .cta{
+    display:inline-block;
+    margin-top:1.5rem;
+    background:var(--yellow);
+    color:#3A2B0A;
+    font-weight:700;
+    font-size:1rem;
+    text-decoration:none;
+    padding:0.8rem 1.6rem;
+    border-radius:999px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    transition:transform 0.15s ease;
+  }
+  .cta:hover{ transform:translateY(-2px); }
+
+  .hero-art{
+    flex:0 0 auto;
+    position:relative;
+    width:min(300px, 90vw);
+    height:260px;
+  }
+  .hero-art .ruler-wrap{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-art svg.ruler-svg{ width:120px; height:220px; }
+  .badge{
+    position:absolute;
+    width:52px; height:52px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(0,0,0,0.18);
+  }
+  .badge svg{ width:24px; height:24px; }
+  .badge-1{ background:var(--yellow); top:6%; right:2%; animation:float-a 5s ease-in-out infinite; }
+  .badge-2{ background:#fff; bottom:8%; left:0%; animation:float-b 6s ease-in-out infinite; }
+  .badge-2 svg{ fill:var(--teal-deep); }
+  @keyframes float-a{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
+  @keyframes float-b{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(8px);} }
+  .orbit{
+    position:absolute; inset:8% 10%;
+    border:2px dashed rgba(255,255,255,0.35);
+    border-radius:50%;
+  }
+
+  @media (max-width:640px){
+    .hero-art{ display:none; }
+  }
+
+  /* ---------- Intro / section header ---------- */
+  .intro{
+    max-width:640px;
+    margin:0 auto;
+    text-align:center;
+    padding:2.75rem 1.5rem 0.5rem;
+  }
+  .intro h2{ font-size:1.7rem; }
+  .intro .rule{
+    width:52px; height:5px; border-radius:3px;
+    background:var(--yellow);
+    margin:0.8rem auto 1rem;
+  }
+  .intro p{ color:var(--muted); font-size:1rem; margin:0; }
+
+  /* ---------- Board layout ---------- */
+  .board{
+    max-width:1100px;
+    margin:0 auto;
+    padding:2rem 1.5rem 4rem;
+    display:grid;
+    grid-template-columns:330px 1fr;
+    gap:1.75rem;
+    align-items:start;
+  }
+  @media (max-width:840px){
+    .board{ grid-template-columns:1fr; padding:1.5rem 1.25rem 3rem; }
+  }
+
+  /* ---------- Entry panel ---------- */
+  .entry-panel{
+    background:var(--panel);
+    border:2px solid var(--line);
+    border-radius:20px;
+    padding:1.6rem;
+    position:sticky;
+    top:1.25rem;
+  }
+  @media (max-width:840px){ .entry-panel{ position:static; } }
+
+  .entry-panel h3{ font-size:1.25rem; margin-bottom:1rem; }
+
+  .field{ display:block; margin-bottom:1rem; }
+  .field span{
+    display:block;
+    font-size:0.88rem;
+    font-weight:700;
+    color:var(--navy);
+    margin-bottom:0.35rem;
+  }
+  .field input{
+    width:100%;
+    padding:0.65rem 0.8rem;
+    border:2px solid var(--line);
+    border-radius:12px;
+    font-size:1rem;
+    font-family:inherit;
+    color:var(--navy);
+    background:var(--paper);
+  }
+  .field input:focus{ border-color:var(--teal); }
+
+  .preview{
+    font-size:0.92rem;
+    color:var(--navy);
+    background:#F1F7F4;
+    border-radius:12px;
+    padding:0.65rem 0.8rem;
+    margin-bottom:1rem;
+    display:flex;
+    align-items:center;
+    gap:0.55rem;
+  }
+  .preview .dot{
+    width:11px; height:11px; border-radius:50%;
+    flex:0 0 auto;
+  }
+  .preview strong{ color:var(--navy); }
+
+  .add-btn{
+    width:100%;
+    background:var(--teal-deep);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:0.8rem 1rem;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:background 0.15s ease;
+  }
+  .add-btn:hover{ background:#124F3D; }
+
+  .error-msg{
+    font-size:0.85rem;
+    color:#B23A2E;
+    margin:-0.4rem 0 1rem;
+    display:none;
+  }
+  .error-msg.show{ display:block; }
+
+  .total-count{
+    margin-top:1.1rem;
+    font-size:0.85rem;
+    color:var(--muted);
+    text-align:center;
+  }
+
+  /* ---------- Wall of bands ---------- */
+  .wall{ display:flex; flex-direction:column; gap:1rem; }
+
+  .band{
+    background:var(--panel);
+    border:2px solid var(--line);
+    border-radius:16px;
+    padding:1.1rem 1.2rem;
+  }
+  .band-head{
+    display:flex;
+    align-items:center;
+    gap:0.8rem;
+    margin-bottom:0.75rem;
+  }
+  .band-icon{
+    flex:0 0 auto;
+    width:42px; height:42px;
+    border-radius:50%;
+    background:var(--band-color, var(--muted));
+    display:flex; align-items:center; justify-content:center;
+  }
+  .band-icon svg{ width:20px; height:20px; fill:#fff; color:#fff; }
+  .band-titles{ flex:1 1 auto; min-width:0; }
+  .band-titles h3{ font-size:1.05rem; }
+  .band-titles .range{ font-size:0.82rem; color:var(--muted); }
+  .band-count{
+    flex:0 0 auto;
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--band-color, var(--muted));
+    background:color-mix(in srgb, var(--band-color, var(--muted)) 14%, transparent);
+    padding:0.3rem 0.65rem;
+    border-radius:999px;
+  }
+
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.5rem;
+  }
+  .chip{
+    display:flex;
+    align-items:center;
+    gap:0.45rem;
+    background:color-mix(in srgb, var(--band-color, var(--muted)) 12%, #fff);
+    border-radius:20px;
+    padding:0.4rem 0.5rem 0.4rem 0.85rem;
+    font-size:0.88rem;
+    font-weight:600;
+    animation:settle 0.25s ease;
+  }
+  @keyframes settle{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .chip .age{ color:var(--muted); font-size:0.8rem; font-weight:500; }
+  .chip button{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    width:20px; height:20px;
+    border-radius:50%;
+    cursor:pointer;
+    line-height:1;
+    font-size:0.95rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .chip button:hover{ background:rgba(0,0,0,0.08); color:var(--navy); }
+
+  .band-empty{
+    font-size:0.86rem;
+    color:var(--muted);
+    font-style:italic;
+  }
+
+  footer{
+    text-align:center;
+    font-size:0.85rem;
+    color:var(--muted);
+    padding:0 1.5rem 2.5rem;
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#form-heading">Saltar al formulario</a>
+
+<header class="hero">
+  <svg class="hero-blob" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M0,0 H1100 V420 C880,500 760,340 560,380 C360,420 260,520 0,460 Z" fill="rgba(255,255,255,0.06)"/>
+    <path d="M700,0 H1100 V520 H860 C760,420 900,280 780,180 C700,110 720,40 700,0 Z" fill="rgba(255,255,255,0.05)"/>
+  </svg>
+
+  <nav class="nav">
+    <svg class="mark" width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+      <rect width="30" height="30" rx="8" fill="#F5AC2B"/>
+      <rect x="7" y="15" width="5" height="9" rx="1.5" fill="#166B54"/>
+      <rect x="12.5" y="10" width="5" height="14" rx="1.5" fill="#fff"/>
+      <rect x="18" y="6" width="5" height="18" rx="1.5" fill="#8B5FBF"/>
+    </svg>
+    <span class="wordmark">Marcador de Edades</span>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-text">
+      <h1>Cada niño, en su lugar</h1>
+      <p>Anota el nombre y la edad y su marca aparece sola en el grupo que le corresponde, como en la pared donde se mide la estatura.</p>
+      <a class="cta" href="#form-heading">Registrar un niño</a>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="orbit"></div>
+      <div class="ruler-wrap">
+        <svg class="ruler-svg" viewBox="0 0 120 220">
+          <rect x="55" y="10" width="10" height="200" rx="4" fill="rgba(255,255,255,0.9)"/>
+          <rect x="65" y="24"  width="34" height="14" rx="4" fill="#8B5FBF"/>
+          <rect x="65" y="62"  width="42" height="14" rx="4" fill="#3D6FE0"/>
+          <rect x="65" y="100" width="30" height="14" rx="4" fill="#1F8F73"/>
+          <rect x="65" y="138" width="38" height="14" rx="4" fill="#F5AC2B"/>
+          <rect x="65" y="176" width="26" height="14" rx="4" fill="#F0653D"/>
+        </svg>
+      </div>
+      <div class="badge badge-1" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 2 L14.5 9 H22 L16 13.5 L18 21 L12 16.5 L6 21 L8 13.5 L2 9 H9.5 Z" fill="#166B54"/></svg>
+      </div>
+      <div class="badge badge-2" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="15" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="11" height="4" rx="1.5"/></svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="intro">
+  <h2>Cómo funciona</h2>
+  <div class="rule"></div>
+  <p>Escribe un nombre y una edad. La app calcula sola el grupo y lo agrega a la lista de esa categoría, al instante.</p>
+</section>
+
+<main class="board">
+  <section class="entry-panel">
+    <h3 id="form-heading">Nuevo registro</h3>
+    <form id="childForm" novalidate>
+      <label class="field">
+        <span>Nombre</span>
+        <input type="text" id="nameInput" placeholder="Ej. Camila" autocomplete="off" required>
+      </label>
+      <label class="field">
+        <span>Edad (años)</span>
+        <input type="number" id="ageInput" placeholder="Ej. 7" min="0" max="99" required>
+      </label>
+
+      <p class="error-msg" id="errorMsg">Escribe un nombre y una edad válida (0 a 99).</p>
+
+      <div class="preview" id="preview" hidden>
+        <span class="dot" id="previewDot"></span>
+        <span>Quedará marcado en <strong id="previewLabel"></strong></span>
+      </div>
+
+      <button type="submit" class="add-btn">Agregar a la pared</button>
+    </form>
+    <p class="total-count" id="totalCount">Aún no hay niños registrados.</p>
+  </section>
+
+  <section class="wall" id="wall" aria-live="polite"></section>
+</main>
+
+<footer>Hecho para organizar grupos por edad — funciona sin conexión una vez instalada.</footer>
+
+<script>
+  const ICONS = {
+    bebe: '<path d="M10 2h4a1 1 0 0 1 1 1v2.2c1.2.6 2 1.9 2 3.3v9.5a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3V8.5c0-1.4.8-2.7 2-3.3V3a1 1 0 0 1 1-1Z"/><rect x="9" y="12" width="6" height="1.6" rx="0.8" fill="var(--band-color)"/>',
+    preescolar: '<rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/><rect x="8.5" y="5" width="7" height="7" rx="1.4"/>',
+    escolar: '<path d="M12 5.2C9.7 3.6 6.2 3.3 3 4.6v13.6c3.2-1.3 6.7-1 9 .6 2.3-1.6 5.8-1.9 9-.6V4.6c-3.2-1.3-6.7-1-9 .6Z"/><rect x="11.2" y="5" width="1.6" height="14" fill="var(--band-color)"/>',
+    preadolescente: '<path d="M4 12.5V11a8 8 0 0 1 16 0v1.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><rect x="2.5" y="12" width="4.5" height="8" rx="2.2"/><rect x="17" y="12" width="4.5" height="8" rx="2.2"/>',
+    adolescente: '<path d="M12 2 L14.5 9 H22 L16 13.5 L18 21 L12 16.5 L6 21 L8 13.5 L2 9 H9.5 Z"/>',
+    adulto: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V6.5A2.5 2.5 0 0 1 11.5 4h1A2.5 2.5 0 0 1 15 6.5V8" fill="none" stroke="currentColor" stroke-width="2"/>'
+  };
+
+  const CATEGORIES = [
+    { id:'adulto',         label:'Adultos (fuera de rango)', range:'18+ años',     min:18, max:200, color:'var(--adulto)' },
+    { id:'adolescente',    label:'Adolescentes',              range:'15–17 años',   min:15, max:17,  color:'var(--adolescente)' },
+    { id:'preadolescente', label:'Preadolescentes',           range:'12–14 años',   min:12, max:14,  color:'var(--preadolescente)' },
+    { id:'escolar',        label:'Niños escolares',           range:'6–11 años',    min:6,  max:11,  color:'var(--escolar)' },
+    { id:'preescolar',     label:'Preescolares',              range:'3–5 años',     min:3,  max:5,   color:'var(--preescolar)' },
+    { id:'bebe',           label:'Bebés',                     range:'0–2 años',     min:0,  max:2,   color:'var(--bebe)' },
+  ];
+
+  function categoryForAge(age){
+    return CATEGORIES.find(c => age >= c.min && age <= c.max) || CATEGORIES[CATEGORIES.length - 1];
+  }
+
+  let children = [];
+  let nextId = 1;
+
+  const form = document.getElementById('childForm');
+  const nameInput = document.getElementById('nameInput');
+  const ageInput = document.getElementById('ageInput');
+  const preview = document.getElementById('preview');
+  const previewLabel = document.getElementById('previewLabel');
+  const previewDot = document.getElementById('previewDot');
+  const errorMsg = document.getElementById('errorMsg');
+  const wall = document.getElementById('wall');
+  const totalCount = document.getElementById('totalCount');
+
+  function updatePreview(){
+    const age = Number(ageInput.value);
+    if(ageInput.value === '' || isNaN(age) || age < 0){
+      preview.hidden = true;
+      return;
+    }
+    const cat = categoryForAge(age);
+    previewLabel.textContent = cat.label;
+    previewDot.style.background = cat.color;
+    preview.hidden = false;
+  }
+  ageInput.addEventListener('input', updatePreview);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const age = Number(ageInput.value);
+
+    if(!name || ageInput.value === '' || isNaN(age) || age < 0 || age > 99){
+      errorMsg.classList.add('show');
+      return;
+    }
+    errorMsg.classList.remove('show');
+
+    children.push({ id: nextId++, name, age });
+    nameInput.value = '';
+    ageInput.value = '';
+    preview.hidden = true;
+    render();
+    nameInput.focus();
+  });
+
+  function removeChild(id){
+    children = children.filter(c => c.id !== id);
+    render();
+  }
+
+  function render(){
+    wall.innerHTML = '';
+
+    CATEGORIES.forEach(cat => {
+      const members = children.filter(c => c.age >= cat.min && c.age <= cat.max);
+      if(cat.id === 'adulto' && members.length === 0) return;
+
+      const band = document.createElement('article');
+      band.className = 'band';
+      band.style.setProperty('--band-color', cat.color);
+
+      const head = document.createElement('div');
+      head.className = 'band-head';
+      head.innerHTML = `
+        <span class="band-icon"><svg viewBox="0 0 24 24">${ICONS[cat.id]}</svg></span>
+        <span class="band-titles">
+          <h3>${cat.label}</h3>
+          <span class="range">${cat.range}</span>
+        </span>
+        <span class="band-count">${members.length} ${members.length === 1 ? 'niño' : 'niños'}</span>
+      `;
+      band.appendChild(head);
+
+      if(members.length === 0){
+        const empty = document.createElement('p');
+        empty.className = 'band-empty';
+        empty.textContent = 'Aún nadie en este grupo.';
+        band.appendChild(empty);
+      } else {
+        const chips = document.createElement('div');
+        chips.className = 'chips';
+        members
+          .slice()
+          .sort((a,b) => a.age - b.age || a.name.localeCompare(b.name))
+          .forEach(child => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.innerHTML = `${escapeHtml(child.name)} <span class="age">${child.age}a</span>`;
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.setAttribute('aria-label', `Quitar a ${child.name}`);
+            del.textContent = '×';
+            del.addEventListener('click', () => removeChild(child.id));
+            chip.appendChild(del);
+            chips.appendChild(chip);
+          });
+        band.appendChild(chips);
+      }
+
+      wall.appendChild(band);
+    });
+
+    totalCount.textContent = children.length === 0
+      ? 'Aún no hay niños registrados.'
+      : `${children.length} ${children.length === 1 ? 'niño registrado' : 'niños registrados'} en total.`;
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, m => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[m]));
+  }
+
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.log('No se pudo registrar el service worker:', err);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
